@@ -1,0 +1,78 @@
+import UIKit
+
+// Defines the interface for a BroadcastLoader.
+// Using a protocol allows flexibility for multiple implementations.
+protocol BroadcastLoader {
+    func loadBroadcast(completion: @escaping ([String]) -> Void)
+}
+
+class BroadcastViewController: UIViewController {
+    // The loader responsible for fetching broadcast data.
+    // Initialized through dependency injection in the convenience initializer.
+    var loader: BroadcastLoader!
+
+    // Convenience initializer to inject the BroadcastLoader dependency.
+    convenience init(loader: BroadcastLoader) {
+        self.init()
+        self.loader = loader
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Initiate the broadcast loading process.
+        loader.loadBroadcast { loadedItems in
+            // Update the UI with the loaded broadcast items (implementation not shown here).
+            // ...
+        }
+    }
+}
+
+// Concrete implementation of BroadcastLoader that fetches data from a remote source.
+class RemoteBroadcastLoader: BroadcastLoader {
+    func loadBroadcast(completion: @escaping ([String]) -> Void) {
+        // Implementation to fetch broadcast data from a remote source (not shown here).
+        // ...
+    }
+}
+
+// Concrete implementation of BroadcastLoader that fetches data from a local source.
+class LocalBroadcastLoader: BroadcastLoader {
+    func loadBroadcast(completion: @escaping ([String]) -> Void) {
+        // Implementation to fetch broadcast data from a local source (not shown here).
+        // ...
+    }
+}
+
+// Helper struct to simulate network reachability (replace with actual reachability logic).
+struct Reachability {
+    static let networkAvailable = false
+}
+
+// Composite BroadcastLoader that prioritizes remote loading if network is available,
+// otherwise falls back to local loading
+class RemoteWithLocalBroadcastLoader: BroadcastLoader {
+    let remote: RemoteBroadcastLoader
+    let local: LocalBroadcastLoader
+
+    init(remote: RemoteBroadcastLoader, local: LocalBroadcastLoader) {
+        self.remote = remote
+        self.local = local
+    }
+
+    func loadBroadcast(completion: @escaping ([String]) -> Void) {
+        // Choose the appropriate loader based on network availability
+        let load = Reachability.networkAvailable ? remote.loadBroadcast : local.loadBroadcast
+        load(completion)
+    }
+}
+
+// Examples of instantiating the BroadcastViewController with different loaders.
+let vc = BroadcastViewController(loader: RemoteBroadcastLoader())
+let vc2 = BroadcastViewController(loader: LocalBroadcastLoader())
+let vc3 = BroadcastViewController(
+    loader: RemoteWithLocalBroadcastLoader(
+        remote: RemoteBroadcastLoader(),
+        local: LocalBroadcastLoader()
+    )
+)
